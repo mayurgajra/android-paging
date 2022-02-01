@@ -17,6 +17,7 @@
 package com.example.android.codelabs.paging.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -30,10 +31,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import com.example.android.codelabs.paging.Injection
 import com.example.android.codelabs.paging.databinding.ActivitySearchRepositoriesBinding
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class SearchRepositoriesActivity : AppCompatActivity() {
@@ -73,6 +71,15 @@ class SearchRepositoriesActivity : AppCompatActivity() {
         search(query)
         initSearch(query)
         binding.retryButton.setOnClickListener { adapter.retry() }
+
+        lifecycleScope.launchWhenStarted {
+            adapter.onPagesUpdatedFlow.collectLatest {
+                Log.d("MG-adapterCount", adapter.itemCount.toString())
+                if (adapter.snapshot().items.isNotEmpty()) {
+                    Log.d("MG-firstItem", adapter.snapshot().items[0].repo.fullName)
+                }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -102,11 +109,13 @@ class SearchRepositoriesActivity : AppCompatActivity() {
                 ?: loadState.prepend
 
             // Only show the list if refresh succeeds, either from the the local db or the remote.
-            binding.list.isVisible =  loadState.source.refresh is LoadState.NotLoading || loadState.mediator?.refresh is LoadState.NotLoading
+            binding.list.isVisible =
+                loadState.source.refresh is LoadState.NotLoading || loadState.mediator?.refresh is LoadState.NotLoading
             // Show loading spinner during initial load or refresh.
             binding.progressBar.isVisible = loadState.mediator?.refresh is LoadState.Loading
             // Show the retry state if initial load or refresh fails and there are no items.
-            binding.retryButton.isVisible = loadState.mediator?.refresh is LoadState.Error && adapter.itemCount == 0
+            binding.retryButton.isVisible =
+                loadState.mediator?.refresh is LoadState.Error && adapter.itemCount == 0
             // Toast on any error, regardless of whether it came from RemoteMediator or PagingSource
             val errorState = loadState.source.append as? LoadState.Error
                 ?: loadState.source.prepend as? LoadState.Error

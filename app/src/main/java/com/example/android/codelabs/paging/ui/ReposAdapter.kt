@@ -25,7 +25,7 @@ import com.example.android.codelabs.paging.R
 /**
  * Adapter for the list of repositories.
  */
-class ReposAdapter : PagingDataAdapter<UiModel, ViewHolder>(UIMODEL_COMPARATOR) {
+class ReposAdapter : PagingDataAdapter<UiModel.RepoItem, ViewHolder>(UIMODEL_COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return if (viewType == R.layout.repo_view_item) {
@@ -38,8 +38,7 @@ class ReposAdapter : PagingDataAdapter<UiModel, ViewHolder>(UIMODEL_COMPARATOR) 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
             is UiModel.RepoItem -> R.layout.repo_view_item
-            is UiModel.SeparatorItem -> R.layout.separator_view_item
-            null -> throw UnsupportedOperationException("Unknown view")
+            else -> throw UnsupportedOperationException("Unknown view")
         }
     }
 
@@ -48,22 +47,24 @@ class ReposAdapter : PagingDataAdapter<UiModel, ViewHolder>(UIMODEL_COMPARATOR) 
         uiModel.let {
             when (uiModel) {
                 is UiModel.RepoItem -> (holder as RepoViewHolder).bind(uiModel.repo)
-                is UiModel.SeparatorItem -> (holder as SeparatorViewHolder).bind(uiModel.description)
             }
         }
     }
 
     companion object {
-        private val UIMODEL_COMPARATOR = object : DiffUtil.ItemCallback<UiModel>() {
-            override fun areItemsTheSame(oldItem: UiModel, newItem: UiModel): Boolean {
-                return (oldItem is UiModel.RepoItem && newItem is UiModel.RepoItem &&
-                        oldItem.repo.fullName == newItem.repo.fullName) ||
-                        (oldItem is UiModel.SeparatorItem && newItem is UiModel.SeparatorItem &&
-                                oldItem.description == newItem.description)
+        private val UIMODEL_COMPARATOR = object : DiffUtil.ItemCallback<UiModel.RepoItem>() {
+            override fun areItemsTheSame(
+                oldItem: UiModel.RepoItem,
+                newItem: UiModel.RepoItem
+            ): Boolean {
+                return (oldItem.repo.fullName == newItem.repo.fullName)
             }
 
-            override fun areContentsTheSame(oldItem: UiModel, newItem: UiModel): Boolean =
-                    oldItem == newItem
+            override fun areContentsTheSame(
+                oldItem: UiModel.RepoItem,
+                newItem: UiModel.RepoItem
+            ): Boolean =
+                oldItem == newItem
         }
     }
 }
